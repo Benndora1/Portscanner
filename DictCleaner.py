@@ -36,7 +36,7 @@ from time      import time
 #		-	max_age: number of seconds maximum that a value is
 #			allowed to be kept in the first_contacts dictionary
 #	Output:
-#		-	N/A 
+#		-	N/A
 #	Task:
 #		-	initialize according to the parent class Thread.__init__
 #		-	assign the parameters to their respective attributes
@@ -46,7 +46,7 @@ from time      import time
 #	Overrides the threading.Thread run function which is called
 #	when the thread is started.
 #	Input:
-#		-	N/A 
+#		-	N/A
 #	Output:
 #		-	No values returned
 #		-	the shared dictionary resource will receive added
@@ -74,17 +74,17 @@ class DictCleaner( Thread ):
         while self.is_running:
             current_time    = time( ) # Time of reference
             keys_to_remove  = []      # Record of expired keys
-			
+
             # === BLOCKING WAIT UNTIL LOCK IS ACQUIRED === #
             with self.lock:
-			
+
                 # === ITERATE KEYS IN SHARED DICTIONARY === #
                 for key in self.first_contacts.keys( ):
-				
+
                     # === IF KEY IS EXPIRED === #
                     if current_time - self.first_contacts[key] > self.max_age_seconds:
                         keys_to_remove.append( key )
-						
+
                 # === REMOVE ALL EXPIRED KEYS === #
                 for key in keys_to_remove:
                     del self.first_contacts[key]

@@ -4,8 +4,8 @@
 # Last Updated: 10/4/2019
 # Description:
 # 	Adopted from Lab4, this packet sniffer has been constructed
-#   as a class which inherits from threading.Thread. This 
-#	sniffer will constantly monitor traffic for as long as 
+#   as a class which inherits from threading.Thread. This
+#	sniffer will constantly monitor traffic for as long as
 #	its own thread
 # ============================================================
 
@@ -38,7 +38,7 @@ from threading import Thread
 #		-	first_contacts: shared dictionary object
 #		-	lock: threading.Lock object
 #	Output:
-#		-	N/A 
+#		-	N/A
 #	Task:
 #		-	initialize according to the parent class Thread.__init__
 #		-	assign the parameters to their respective attributes
@@ -75,7 +75,7 @@ from threading import Thread
 #
 # ethernet_dissect:
 #	Dissect the ethernet layer of the communication packet
-#	into source MAC address, destination MAC address, 
+#	into source MAC address, destination MAC address,
 #	protocol id, and the remaining packet without the ethernet
 #	headers.
 #	Input:
@@ -86,8 +86,8 @@ from threading import Thread
 #		3. Protocol ID
 #		4. Remaining packet (IP data)
 #	Task:
-#		-	unpack the appropriate amount of bytes from the 
-#			packet header (6 for destination MAC, 6 for 
+#		-	unpack the appropriate amount of bytes from the
+#			packet header (6 for destination MAC, 6 for
 #			source MAC, 2 for Protocol)
 #		-	format the source and destination MAC addresses
 #			using mac_format
@@ -96,8 +96,8 @@ from threading import Thread
 #
 #
 # ipv4_dissect:
-#	Dissect the raw IP packet data to extract the IP protocol, 
-#	source and destination IP addresses, and the rest of the 
+#	Dissect the raw IP packet data to extract the IP protocol,
+#	source and destination IP addresses, and the rest of the
 #	packet contents.
 #	Input:
 #		-	ip_data: raw IP packet to be dissected
@@ -156,7 +156,7 @@ from threading import Thread
 #		-	transport_data: raw transport layer of the packet
 #			with ICMP protocol format expected
 #	Output:
-#		1. ICMP Type 
+#		1. ICMP Type
 #		2. ICMP Code
 #	Task:
 #		-	First byte extracted is the ICMP Type
@@ -168,7 +168,7 @@ from threading import Thread
 #	Overrides the threading.Thread run function which is called
 #	when the thread is started.
 #	Input:
-#		-	N/A 
+#		-	N/A
 #	Output:
 #		-	No values returned
 #		-	Shared first_contacts dictionary will be given
@@ -185,7 +185,7 @@ from threading import Thread
 #			the packet
 #		-	either tcp_dissect, udp_dissect, or icmp_dissect
 #			based on the IP porotocol
-#		-	if the tuple (Source IP, Destination IP, Destination 
+#		-	if the tuple (Source IP, Destination IP, Destination
 #			Port) is unique, add it to the shared first_contacts
 #			shared dictionary, with the tuple as the key, and the
 #			time.time() timestamp as the values
@@ -198,33 +198,33 @@ class Sniffer( Thread ):
     def __init__( self , first_contacts , lock ):
         super( ).__init__( )
         self.first_contacts  =  first_contacts
-		self.lock            =  lock
+        self.lock            =  lock
         self.is_running      =  True
 
-	
+
     ### METHOD mac_format ###
     def mac_format( mac ):
         mac = map( '{:02x}'.format , mac )
         return ''.join( mac ).upper( )
 
-    
+
     ### METHOD ipv4_format ###
     def ipv4_format( address ):
         return '.'.join( map( str , address ) )
 
-    
+
     ### METHOD ethernet_dissect ###
     def ethernet_dissect( ethernet_data ):
         dest_mac, src_mac, protocol  =  struct.unpack( '!6s6sH' , ethernet_data[:14] )
         return Sniffer.mac_format( dest_mac ), Sniffer.mac_format( src_mac ), socket.htons( protocol ), ethernet_data[14:]
 
-    
+
     ### METHOD ipv4_dissect ###
     def ipv4_dissect( ip_data ):
         ip_protocol, source_ip, target_ip = struct.unpack( '!9x B 2x 4s 4s', ip_data[:20] )
         return ip_protocol, Sniffer.ipv4_format( source_ip ), Sniffer.ipv4_format( target_ip ), ip_data[20:]
 
-    
+
     ### METHOD tcp_dissect ###
     def tcp_dissect( transport_data ):
         source_port, dest_port  =  struct.unpack( '!HH' , transport_data[:4] )
@@ -236,57 +236,57 @@ class Sniffer( Thread ):
         source_port, dest_port  =  struct.unpack( '!HH' , transport_data[:4] )
         return source_port, dest_port
 
-    
+
     ### METHOD icmp_dissect ###
     def icmp_dissect( transport_data ):
         icmp_type, icmp_code  =  struct.unpack( '!BB' , transport_data[:2] )
         return icmp_type, icmp_code
 
-    
+
     ### OVERRIDDEN METHOD run ###
     def run( self ):
         packets  =  socket.socket( socket.PF_PACKET , socket.SOCK_RAW , socket.htons( 0x0800 ) )
         packets.settimeout( 5 ) # 5 second timeout to prevent hanging on recvfrom
-		
+
         # === ITERATE UNLESS STOPPED EXTERNALLY === #
         while self.is_running:
-		
+
             # === TRY RECEIVING WITH TIMEIOUT === #
             try:
                 ethernet_data, address  =  packets.recvfrom( 65536 )
-			
+
             # === RE-ITERATE ON TIMEOUT === #
             except socket.timeout:
                 continue
-				
+
             # === ETHERNET DISSECT === #
             dest_mac, src_mac, protocol, ip_data  =  Sniffer.ethernet_dissect( ethernet_data )
-			
+
             # === IF IPV4 === #
             if protocol == 8:
-				
+
                 # === IPV4 DISSECT === #
                 ip_protocol, src_ip, dest_ip, transport_data = Sniffer.ipv4_dissect( ip_data )
                 contact  =  False
-				
+
                 # === IF TCP === #
                 if ip_protocol == 6: # TCP
-					
+
                     # === TCP DISSECT === #
                     src_port, dest_port  =  Sniffer.tcp_dissect( transport_data )
                     contact = True
-					
+
                 # === OTHERWISE IF UDP === #
                 elif ip_protocol == 17: # UDP
-				
+
                     # === UDP DISSECT === #
                     src_port, dest_port  =  Sniffer.udp_dissect( transport_data )
                     contact  =  True
-					
+
                 # === TCP OR UDP ONLY === #
                 if contact:
                     key  =  ( src_ip , dest_ip , dest_port )
-					
+
                     # === ONLY MODIFY SHARED DICTIONARY WHEN LOCK IS ACQUIRED === #
                     with self.lock:
                         self.first_contacts[key]  =  time.time( ) # create entry OR update timestamp
