@@ -1,1 +1,1 @@
-"# CSCI5742_HW3: Port-Scanner Detector" 
+# Cybersecurity Programming Homework 3: Port-Scanner Detector
