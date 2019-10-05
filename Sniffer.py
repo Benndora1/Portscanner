@@ -194,7 +194,7 @@ from threading import Thread
 #
 # ============================================================
 class Sniffer( Thread ):
-	### ___init___ CONSTRUCTOR ###
+    ### ___init___ CONSTRUCTOR ###
     def __init__( self , first_contacts , lock ):
         super( ).__init__( )
         self.first_contacts  =  first_contacts
@@ -202,30 +202,30 @@ class Sniffer( Thread ):
         self.is_running      =  True
 
 	
-	### METHOD mac_format ###
+    ### METHOD mac_format ###
     def mac_format( mac ):
         mac = map( '{:02x}'.format , mac )
         return ''.join( mac ).upper( )
 
     
-	### METHOD ipv4_format ###
+    ### METHOD ipv4_format ###
     def ipv4_format( address ):
         return '.'.join( map( str , address ) )
 
     
-	### METHOD ethernet_dissect ###
+    ### METHOD ethernet_dissect ###
     def ethernet_dissect( ethernet_data ):
         dest_mac, src_mac, protocol  =  struct.unpack( '!6s6sH' , ethernet_data[:14] )
         return Sniffer.mac_format( dest_mac ), Sniffer.mac_format( src_mac ), socket.htons( protocol ), ethernet_data[14:]
 
     
-	### METHOD ipv4_dissect ###
+    ### METHOD ipv4_dissect ###
     def ipv4_dissect( ip_data ):
         ip_protocol, source_ip, target_ip = struct.unpack( '!9x B 2x 4s 4s', ip_data[:20] )
         return ip_protocol, Sniffer.ipv4_format( source_ip ), Sniffer.ipv4_format( target_ip ), ip_data[20:]
 
     
-	### METHOD tcp_dissect ###
+    ### METHOD tcp_dissect ###
     def tcp_dissect( transport_data ):
         source_port, dest_port  =  struct.unpack( '!HH' , transport_data[:4] )
         return source_port, dest_port
@@ -237,56 +237,56 @@ class Sniffer( Thread ):
         return source_port, dest_port
 
     
-	### METHOD icmp_dissect ###
+    ### METHOD icmp_dissect ###
     def icmp_dissect( transport_data ):
         icmp_type, icmp_code  =  struct.unpack( '!BB' , transport_data[:2] )
         return icmp_type, icmp_code
 
     
-	### OVERRIDDEN METHOD run ###
+    ### OVERRIDDEN METHOD run ###
     def run( self ):
         packets  =  socket.socket( socket.PF_PACKET , socket.SOCK_RAW , socket.htons( 0x0800 ) )
         packets.settimeout( 5 ) # 5 second timeout to prevent hanging on recvfrom
 		
-		# === ITERATE UNLESS STOPPED EXTERNALLY === #
+        # === ITERATE UNLESS STOPPED EXTERNALLY === #
         while self.is_running:
 		
-			# === TRY RECEIVING WITH TIMEIOUT === #
+            # === TRY RECEIVING WITH TIMEIOUT === #
             try:
                 ethernet_data, address  =  packets.recvfrom( 65536 )
 			
-			# === RE-ITERATE ON TIMEOUT === #
+            # === RE-ITERATE ON TIMEOUT === #
             except socket.timeout:
                 continue
 				
-			# === ETHERNET DISSECT === #
+            # === ETHERNET DISSECT === #
             dest_mac, src_mac, protocol, ip_data  =  Sniffer.ethernet_dissect( ethernet_data )
 			
-			# === IF IPV4 === #
+            # === IF IPV4 === #
             if protocol == 8:
 				
-				# === IPV4 DISSECT === #
+                # === IPV4 DISSECT === #
                 ip_protocol, src_ip, dest_ip, transport_data = Sniffer.ipv4_dissect( ip_data )
                 contact  =  False
 				
-				# === IF TCP === #
+                # === IF TCP === #
                 if ip_protocol == 6: # TCP
 					
-					# === TCP DISSECT === #
+                    # === TCP DISSECT === #
                     src_port, dest_port  =  Sniffer.tcp_dissect( transport_data )
                     contact = True
 					
-				# === OTHERWISE IF UDP === #
+                # === OTHERWISE IF UDP === #
                 elif ip_protocol == 17: # UDP
 				
-					# === UDP DISSECT === #
+                    # === UDP DISSECT === #
                     src_port, dest_port  =  Sniffer.udp_dissect( transport_data )
                     contact  =  True
 					
-				# === TCP OR UDP ONLY === #
+                # === TCP OR UDP ONLY === #
                 if contact:
                     key  =  ( src_ip , dest_ip , dest_port )
 					
-					# === ONLY MODIFY SHARED DICTIONARY WHEN LOCK IS ACQUIRED === #
+                    # === ONLY MODIFY SHARED DICTIONARY WHEN LOCK IS ACQUIRED === #
                     with self.lock:
                         self.first_contacts[key]  =  time.time( ) # create entry OR update timestamp

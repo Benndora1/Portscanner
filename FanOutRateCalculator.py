@@ -69,7 +69,7 @@ from time      import time
 #						for exceeding the 5min threshold
 # ============================================================
 class FanOutRateCalculator( Thread ):
-	### CONSTRUCTOR __init___ ###
+    ### CONSTRUCTOR __init___ ###
     def __init__( self , first_contacts , lock ):
         super( ).__init__( )
         self.first_contacts   =  first_contacts
@@ -77,59 +77,59 @@ class FanOutRateCalculator( Thread ):
         self.is_running       =  True
 
 
-	### OVERRIDDEN METHOD run ###
+    ### OVERRIDDEN METHOD run ###
     def run( self ):
-		# === LOCAL VARIABLES === #
+        # === LOCAL VARIABLES === #
         ages             =  [ 1 ,  60 , 300 ] # 1=1s, 60=1min, 300=5mins
         max_connections  =  [ 5 , 100 , 300 ] # threshold connections for fan-out-rate to be scanner
         blacklist        =  dict( )           # used to avoid printing the same IP for the same reason endlessly
 		
-		# === RUN UNTIL TOLD EXTERNALLY TO STOP === #
+        # === RUN UNTIL TOLD EXTERNALLY TO STOP === #
         while self.is_running:
             source_connections  =  dict( ) # key=source IP, value= [ connections in past 1s, past 1min, past 5mins]
 			
-			# === BLOCKING WAIT UNTIL LOCK IS ACQUIRED === #
+            # === BLOCKING WAIT UNTIL LOCK IS ACQUIRED === #
             with self.lock:
 				current_time  =  time( ) # timestamp at start of iteration, so all are considered from a static reference
 				
-				# === ITERATE OVER KEYS IN SHARED DICTIONARY === #
+                # === ITERATE OVER KEYS IN SHARED DICTIONARY === #
                 for key in self.first_contacts.keys( ):
                     source  =  key[0] # key[0] is the source IP
 					
-					# === CALCULATE RATES FOR ALL TIME INTERVALS AT ONCE === #
+                    # === CALCULATE RATES FOR ALL TIME INTERVALS AT ONCE === #
                     for i in range( len( ages ) ): # 3, but made dynamic to be scalable
                         if current_time - self.first_contacts[key] < ages[i]: # within the time-scope for calculation
                             fan_out_rates               =  source_connections.get(source, [0,0,0]) # get current rates or default of all 0
                             fan_out_rates[i]           +=  1 # increment rate for appropriate time scope
                             source_connections[source]  =  fan_out_rates # store the updated value within a non-shared dict to safely release lock
 							
-			# === ITERATE OVER THE IP ADDRESSES RECORDED ABOVE === #
+            # === ITERATE OVER THE IP ADDRESSES RECORDED ABOVE === #
             for key in source_connections.keys( ):
                 detected  =  False # Flag set if scanner is detected
                 reason    =  ''    # Dynamically produce "reason" text at runtime
 				
-				# === COMPARE TO ALL THRESHOLDS === #
+                # === COMPARE TO ALL THRESHOLDS === #
                 for i in range( len( max_connections ) ): # 3, but made dynamic for scalability
 				
-					# === IF CONNECTED MORE THAN THAT TIME INTERVAL'S THRESHOLD === #
+                    # === IF CONNECTED MORE THAN THAT TIME INTERVAL'S THRESHOLD === #
                     if source_connections[key][i] > max_connections[i]: # if it connected more than threshold
 					
-						# === IGNORE BLACKLISTED IP ADDRESSES === #
+                        # === IGNORE BLACKLISTED IP ADDRESSES === #
                         if i in blacklist.get( key , list( ) ):
                             continue
 						
-						# === NOT A BLACKLISTED IP ADDRESS === #
+                        # === NOT A BLACKLISTED IP ADDRESS === #
 						else:
 							detected        =  True # Flag Detection
 							reason          =  'Reason: Fan-Out-Rate per-{} seconds > {}'.format( ages[i] , max_connections[i] )
 							blacklist[key]  =  blacklist.get( key ,list( ) ) + [i] # Blacklist source ip and reason in order to not print again
 							break
 							
-				# === IF ANY IP HAS SURPASSED ANY THRESHOLD === #
+                # === IF ANY IP HAS SURPASSED ANY THRESHOLD === #
                 if detected:
                     print( 'Port Scanner Detected from IP Address: {}'.format( key ) )
 					
-					# === PRINT FAN OUT RATE FOR ALL INTERVALS === #
+                    # === PRINT FAN OUT RATE FOR ALL INTERVALS === #
                     for i in range( len( max_connections ) ): # 3, but left dynamic for scalability
                         print( '   Fan-Out-Rate Per {}s (past {}s only): {}'.format( ages[i] , ages[i] , source_connections[key][i] ) )
 					

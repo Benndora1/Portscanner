@@ -50,21 +50,21 @@ from FanOutRateCalculator import FanOutRateCalculator
 #		termination
 # ============================================================
 def detect_ps( ):
-	# === SHARED VARIABLES === #
+    # === SHARED VARIABLES === #
     first_contacts  =  dict( )
     lock            =  threading.Lock( )
 	
-	# === INITIALIZE THREAD OBJECTS === #
+    # === INITIALIZE THREAD OBJECTS === #
     sniffer                  =  Sniffer( first_contacts , lock )
     cleanup                  =  DictCleaner( first_contacts , lock )
     fan_out_rate_calculator  =  FanOutRateCalculator( first_contacts , lock )
 	
-	# === START THE TREADS === #
+    # === START THE TREADS === #
     sniffer.start( )
     cleanup.start( )
     fan_out_rate_calculator.start( )
 
-	# === RUN UNTIL USER TELLS PROGRAM TO STOP === #
+    # === RUN UNTIL USER TELLS PROGRAM TO STOP === #
     print( '[+] Enter \'x\' to Stop Detecting' )
     while True:
         x  =  input( )
@@ -72,17 +72,17 @@ def detect_ps( ):
             print( '[*] Terminating Threads...' )
             break
 
-	# === ALLOW THREADS TO ESCAPE THEIR INFINITE LOOPS === #
+    # === ALLOW THREADS TO ESCAPE THEIR INFINITE LOOPS === #
     sniffer.is_running                  =  False
     cleanup.is_running                  =  False
     fan_out_rate_calculator.is_running  =  False
 	
-	# === JOIN TO MAIN THREAD TO PREVENT HANGING
+    # === JOIN TO MAIN THREAD TO PREVENT HANGING
     sniffer.join( )
     cleanup.join( )
     fan_out_rate_calculator.join( )
 
-	# === EXIT DRIVER FUNCTION === #
+    # === EXIT DRIVER FUNCTION === #
     return
 
 

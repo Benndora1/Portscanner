@@ -59,7 +59,7 @@ from time      import time
 #			(value) is older than the max allowed age
 # ============================================================
 class DictCleaner( Thread ):
-	### __init__ CONSTRUCTOR ###
+    ### __init__ CONSTRUCTOR ###
     def __init__( self , first_contacts , lock , max_age_seconds=300 ):
         super( ).__init__( )
         self.first_contacts  =  first_contacts
@@ -68,23 +68,23 @@ class DictCleaner( Thread ):
         self.is_running      =  True
 
 
-	### OVERRIDDEN METHOD run ###
+    ### OVERRIDDEN METHOD run ###
     def run( self ):
-		# === CONTINUE UNTIL FLAG CHANGES EXTERNALLY === #
+        # === CONTINUE UNTIL FLAG CHANGES EXTERNALLY === #
         while self.is_running:
             current_time    = time( ) # Time of reference
             keys_to_remove  = []      # Record of expired keys
 			
-			# === BLOCKING WAIT UNTIL LOCK IS ACQUIRED === #
+            # === BLOCKING WAIT UNTIL LOCK IS ACQUIRED === #
             with self.lock:
 			
-				# === ITERATE KEYS IN SHARED DICTIONARY === #
+                # === ITERATE KEYS IN SHARED DICTIONARY === #
                 for key in self.first_contacts.keys( ):
 				
-					# === IF KEY IS EXPIRED === #
+                    # === IF KEY IS EXPIRED === #
                     if current_time - self.first_contacts[key] > self.max_age_seconds:
                         keys_to_remove.append( key )
 						
-				# === REMOVE ALL EXPIRED KEYS === #
+                # === REMOVE ALL EXPIRED KEYS === #
                 for key in keys_to_remove:
                     del self.first_contacts[key]
