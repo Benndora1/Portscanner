@@ -48,8 +48,8 @@ Run PS-Detector on Kali VM 1.
 On Kali VM 2, run your port-scanner. You will run it for 5 different scenarios with 5 different waiting times: 1 ms, 0.5s, 1s, 5s, 10s
 
 You must submit the following in a zip folder:
-1- PS-detector .py file.
-2- Port scanner .py file.
-3- A report that describes code, your LAN setup, and also screenshots of your results for each waiting time (5 total). Your report must include a discussion section, where you interpret your results. For example, why you did or did not detect the port-scanner. You must also describe your new assumptions that are not mentioned here.
+1. PS-detector .py file.
+2. Port scanner .py file.
+3. A report that describes code, your LAN setup, and also screenshots of your results for each waiting time (5 total). Your report must include a discussion section, where you interpret your results. For example, why you did or did not detect the port-scanner. You must also describe your new assumptions that are not mentioned here.
 
 There's no template for the report, but readability and appropriate formatting of the report will also affect your grade. 
