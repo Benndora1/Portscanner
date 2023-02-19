@@ -1,90 +1,55 @@
-# ============================================================
-# File:         DictCleaner.py
-# Author:       Drake Young
-# Last Updated: 10/4/2019
-# Description:
-# 	File contains the class object DictCleaner, a utility
-#   object used for removing objects from a shared dictionary
-#   in a thread-safe way once their timestamp becomes outdated
-#	by a specified amount
-# ============================================================
-
-# ============================================================
-# Imports:
-# ============================================================
-# 	-	threading.Thread: DictCleaner inherits from Thread
-#	-	time.time: used to determine whether an item has expired
-# ============================================================
 from threading import Thread
-from time      import time
+from time import time
 
 
-# ============================================================
-# Class: DictCleaner
-# ============================================================
-# Description:
-# 	Utility class used for clearing out expired items from a given
-# 	shared dictionary in a thread-safe way
-# ============================================================
-# Methods
-# ============================================================
-# ___init___:
-# 	Overrides the threading.Thread constructor
-#	Input:
-#		-	first_contacts: shared dictionary object
-#		-	lock: threading.Lock object
-#		-	max_age: number of seconds maximum that a value is
-#			allowed to be kept in the first_contacts dictionary
-#	Output:
-#		-	N/A
-#	Task:
-#		-	initialize according to the parent class Thread.__init__
-#		-	assign the parameters to their respective attributes
-#		-	set the attribute flag is_running to True
-#
-# run:
-#	Overrides the threading.Thread run function which is called
-#	when the thread is started.
-#	Input:
-#		-	N/A
-#	Output:
-#		-	No values returned
-#		-	the shared dictionary resource will receive added
-#			values during runtime if a first-time-contact is
-#			found
-#	Task:
-#		-	When this thread receives access to the Lock,
-#			iterate over the first_contacts dictionary
-#		-	record the keys of the dictionary whose timestamp
-#			(value) is older than the max allowed age
-# ============================================================
-class DictCleaner( Thread ):
-    ### __init__ CONSTRUCTOR ###
-    def __init__( self , first_contacts , lock , max_age_seconds=300 ):
-        super( ).__init__( )
-        self.first_contacts  =  first_contacts
-        self.lock            =  lock
-        self.max_age_seconds =  max_age_seconds
-        self.is_running      =  True
+class DictCleaner(Thread):
+    # Define a class that extends the Thread class
 
+    def __init__(self, first_contacts, lock, max_age_seconds=300):
+        # Define the constructor for the class
+        super().__init__()
+        # Call the constructor of the superclass
 
-    ### OVERRIDDEN METHOD run ###
-    def run( self ):
-        # === CONTINUE UNTIL FLAG CHANGES EXTERNALLY === #
+        self.first_contacts = first_contacts
+        # Store the first_contacts dictionary
+
+        self.lock = lock
+        # Store the lock object
+
+        self.max_age_seconds = max_age_seconds
+        # Store the maximum age of an entry
+
+        self.is_running = True
+        # Initialize the is_running attribute to True
+
+    def run(self):
+        # Define the run method that will be executed when the thread starts
+
         while self.is_running:
-            current_time    = time( ) # Time of reference
-            keys_to_remove  = []      # Record of expired keys
+            # While the thread is running...
 
-            # === BLOCKING WAIT UNTIL LOCK IS ACQUIRED === #
+            current_time = time()
+            # Get the current time
+
+            keys_to_remove = []
+            # Create an empty list to store the keys to remove
+
             with self.lock:
+                # Use the lock to synchronize access to the dictionary
 
-                # === ITERATE KEYS IN SHARED DICTIONARY === #
-                for key in self.first_contacts.keys( ):
+                for key in self.first_contacts.keys():
+                    # Iterate over the keys in the dictionary
 
-                    # === IF KEY IS EXPIRED === #
                     if current_time - self.first_contacts[key] > self.max_age_seconds:
-                        keys_to_remove.append( key )
+                        # If the age of the entry is greater than the maximum age...
 
-                # === REMOVE ALL EXPIRED KEYS === #
+                        keys_to_remove.append(key)
+                        # Add the key to the list of keys to remove
+
                 for key in keys_to_remove:
+                    # Iterate over the list of keys to remove
+
                     del self.first_contacts[key]
+                    # Remove the key from the dictionary
+
+   
