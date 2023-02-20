@@ -5,9 +5,9 @@ from threading import Thread
 
 
 class Sniffer( Thread ):
-    def __init__( self , first_con , lock ):
+    def __init__( self , first_contacts , lock ):
         super( ).__init__( )
-        self.first_con       =  first_con
+        self.first_contacts  =  first_contacts
         self.lock            =  lock
         self.is_running      =  True
 

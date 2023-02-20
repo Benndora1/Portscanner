@@ -1,76 +1,35 @@
-import socket
-import time
-import ipaddress
+import socket  # Used for network connectivity
+import time  # Used for timing
+import argparse  # Used for command-line argument parsing
+import ipaddress  # Used for IP address manipulation
 
-# Define the TCP scanner function
-def tcp_scanner(port, target):
+
+def tcp_scanner(ip, port):
     try:
-        # Create a TCP socket using the socket module
         tcp_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # Try to connect to the target on the specified port
-        tcp_sock.connect((target, port))
-
-        # Close the socket
+        tcp_sock.connect((ip, port))
+        return True
+    except:
+        return False
+    finally:
         tcp_sock.close()
 
-        # If the connection is successful, return True
-        return True
-    except socket.error:
-        # If the connection is unsuccessful (i.e., the port is not open), return False
-        return False
+
+def port_scan(cidr, delay_per_scan, ports):
+
+    network = ipaddress.IPv4Network(cidr)
+
+    for ip in network.hosts():
+        for port in ports:
+            if tcp_scanner(str(ip), port):
+                print('[*] Port {}/tcp is open on {}'.format(port, str(ip)))
+            time.sleep(delay_per_scan)
 
 
-# Define the UDP scanner function
-def udp_scanner(target, port):
-    try:
-        # Create a UDP socket using the socket module
-        udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+parser = argparse.ArgumentParser(description='TCP port scanner')
+parser.add_argument('cidr', metavar='CIDR', type=str, help='network address range in CIDR notation')
+parser.add_argument('--ports', metavar='PORT', type=int, nargs='+', help='list of ports to scan (default is 1-1023)', default=list(range(1, 1024)))
+parser.add_argument('--delay', metavar='DELAY', type=float, help='time to wait (in milliseconds) between every two consecutive scans (default is 1000ms)', default=1000)
+args = parser.parse_args()
 
-        # Set a timeout for the socket
-        udp_sock.settimeout(2.0)
-
-        # Send a UDP packet to the target on the specified port
-        udp_sock.sendto(bytes("NOTHING", "utf-8"), (target, port))
-
-        # If a response is received, store it and the address in the response and addr variables
-        response, addr = udp_sock.recvfrom(1024)
-
-        # If the response is not None, return True (indicating that the port is open)
-        if response != None:
-            return True
-        return False
-    except:
-        # If no response is received, print a message indicating that the port may be open but not responding
-        print('no response from udp port {}. Port may be open but not responding.'.format(port))
-
-
-# Define the main function
-def main():
-    # Prompt the user for the target network address range in CIDR notation and the waiting time in milliseconds
-    target_network = input("[+] Enter Target Network in CIDR Notation (e.g. 192.168.1.0/24): ")
-    wait_time = int(input("[+] Enter Waiting Time Between Scans in Milliseconds: "))
-
-    # Parse the network address range
-    target_network = ipaddress.ip_network(target_network)
-
-    # Scan TCP and UDP ports in the target network address range
-    for ip_address in target_network.hosts():
-        ip_address_str = str(ip_address)
-        for portNumber in range(1, 1024):
-            # Use the tcp_scanner function to check if the port is open
-            if tcp_scanner(portNumber, ip_address_str):
-                # If the port is open, print a message indicating the IP address, port number, and the protocol (TCP)
-                print('[*] IP', ip_address_str, 'Port', portNumber, 'tcp', 'is open')
-
-            # Use the udp_scanner function to check if the port is open
-            if udp_scanner(ip_address_str, portNumber):
-                # If the port is open, print a message indicating the IP address, port number, and the protocol (UDP)
-                print('[*] IP', ip_address_str, 'Port', portNumber, 'udp', 'is open')
-
-            # Wait for the specified amount of time before scanning the next port on the same IP address
-            time.sleep(wait_time / 1000.0)
-
-# If the script is run as the main module, call the main function
-if __name__ == "__main__":
-    main()
+port_scan(args.cidr, args.delay / 1000, args.ports)
